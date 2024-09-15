@@ -59,6 +59,35 @@ app.post('/api/clients', async (req, res) => {
     }
 });
 
+app.patch('/api/clients/:id', async (req, res) => {
+    try {
+        const clientId = req.params.id;
+        const patchOperations = req.body;
+
+        // Validate patch operations
+        if (!Array.isArray(patchOperations)) {
+            return res.status(400).json({ error: 'Invalid patch format. Expected an array of patch operations.' });
+        }
+
+        for (const op of patchOperations) {
+            if (!op.op || !op.path || (op.op !== 'remove' && !op.hasOwnProperty('value'))) {
+                return res.status(400).json({ error: 'Invalid patch operation. Each operation must have "op" and "path" fields, and "value" for non-remove operations.' });
+            }
+            if (!['add', 'remove', 'replace', 'move', 'copy', 'test'].includes(op.op)) {
+                return res.status(400).json({ error: 'Invalid operation. Allowed operations are: add, remove, replace, move, copy, test.' });
+            }
+        }
+
+        const response = await axios.patch(`${config.OAUTH2_BASE_URL}/clients/${clientId}`, patchOperations, {
+            headers: { 'Content-Type': 'application/json-patch+json' }
+        });
+        res.json(response.data);
+    } catch (error) {
+        console.error('Error updating client:', error.message);
+        res.status(500).json({ error: 'Error updating client' });
+    }
+});
+
 app.listen(config.APP_PORT, config.APP_HOST, () => {
     console.log(`Server running at http://${config.APP_HOST}:${config.APP_PORT}`);
     console.log(`Using OAuth2 base URL: ${config.OAUTH2_BASE_URL}`);

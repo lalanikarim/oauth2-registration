@@ -3,6 +3,7 @@ const API_BASE_URL = '/api';
 const LIST_CLIENTS_ENDPOINT = `${API_BASE_URL}/clients`;
 const CLIENT_DETAILS_ENDPOINT = `${API_BASE_URL}/clients/`;
 const REGISTER_CLIENT_ENDPOINT = `${API_BASE_URL}/clients`;
+const UPDATE_CLIENT_ENDPOINT = `${API_BASE_URL}/clients/`;
 
 // DOM elements
 const clientListItems = document.getElementById('clientListItems');
@@ -17,6 +18,17 @@ const contactsContainer = document.getElementById('contactsContainer');
 const addContactButton = document.getElementById('addContact');
 const paginationContainer = document.getElementById('paginationContainer');
 const filterForm = document.getElementById('filterForm');
+
+// DOM elements for update form
+const updateForm = document.getElementById('updateForm');
+const updateClientId = document.getElementById('updateClientId');
+const updateClientName = document.getElementById('updateClientName');
+const updateRedirectUrisContainer = document.getElementById('updateRedirectUrisContainer');
+const addUpdateRedirectUriButton = document.getElementById('addUpdateRedirectUri');
+const updateScopesContainer = document.getElementById('updateScopesContainer');
+const addUpdateScopeButton = document.getElementById('addUpdateScope');
+const updateContactsContainer = document.getElementById('updateContactsContainer');
+const addUpdateContactButton = document.getElementById('addUpdateContact');
 
 let allClients = [];
 let currentPage = 1;
@@ -123,6 +135,34 @@ function displayClientDetails(client) {
         <p><strong>Created At:</strong> ${client.created_at}</p>
         <p><strong>Updated At:</strong> ${client.updated_at}</p>
     `;
+
+    populateUpdateForm(client);
+}
+
+// Populate update form
+function populateUpdateForm(client) {
+    updateClientId.value = client.client_id;
+    updateClientName.value = client.client_name;
+    updateRedirectUrisContainer.innerHTML = client.redirect_uris.map(uri => 
+        `<input type="text" class="updateRedirectUri" value="${uri}">`
+    ).join('');
+    document.querySelectorAll('input[name="updateGrantTypes"]').forEach(checkbox => {
+        checkbox.checked = client.grant_types.includes(checkbox.value);
+    });
+    document.querySelectorAll('input[name="updateResponseTypes"]').forEach(checkbox => {
+        checkbox.checked = client.response_types.includes(checkbox.value);
+    });
+    updateScopesContainer.innerHTML = client.scope.split(' ').map(scope => 
+        `<input type="text" class="updateScope" value="${scope}">`
+    ).join('');
+    document.querySelector(`input[name="updateTokenEndpointAuthMethod"][value="${client.token_endpoint_auth_method}"]`).checked = true;
+    document.getElementById('updateOwner').value = client.owner || '';
+    updateContactsContainer.innerHTML = (client.contacts || []).map(contact => 
+        `<input type="text" class="updateContact" value="${contact}">`
+    ).join('');
+    document.getElementById('updateClientUri').value = client.client_uri || '';
+    document.getElementById('updateLogoUri').value = client.logo_uri || '';
+    document.getElementById('updateTosUri').value = client.tos_uri || '';
 }
 
 // Add new redirect URI input
@@ -294,6 +334,138 @@ function showToast(message, type = 'info') {
             toastContainer.removeChild(toast);
         }
     }, 5000);
+}
+
+// Add new update redirect URI input
+addUpdateRedirectUriButton.addEventListener('click', () => {
+    if (updateRedirectUrisContainer.children.length < 10) {
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'updateRedirectUri';
+        updateRedirectUrisContainer.appendChild(input);
+    }
+    if (updateRedirectUrisContainer.children.length === 10) {
+        addUpdateRedirectUriButton.disabled = true;
+    }
+});
+
+// Add new update scope input
+addUpdateScopeButton.addEventListener('click', () => {
+    if (updateScopesContainer.children.length < 20) {
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'updateScope';
+        updateScopesContainer.appendChild(input);
+    }
+    if (updateScopesContainer.children.length === 20) {
+        addUpdateScopeButton.disabled = true;
+    }
+});
+
+// Add new update contact input
+addUpdateContactButton.addEventListener('click', () => {
+    if (updateContactsContainer.children.length < 10) {
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'updateContact';
+        input.placeholder = 'name email@example.com';
+        updateContactsContainer.appendChild(input);
+    }
+    if (updateContactsContainer.children.length === 10) {
+        addUpdateContactButton.disabled = true;
+    }
+});
+
+// Update client
+updateForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const clientId = updateClientId.value;
+    const updates = {
+        client_name: updateClientName.value,
+        redirect_uris: Array.from(document.querySelectorAll('.updateRedirectUri'))
+            .map(input => input.value.trim())
+            .filter(uri => uri !== ''),
+        grant_types: Array.from(document.querySelectorAll('input[name="updateGrantTypes"]:checked'))
+            .map(checkbox => checkbox.value),
+        response_types: Array.from(document.querySelectorAll('input[name="updateResponseTypes"]:checked'))
+            .map(checkbox => checkbox.value),
+        scope: Array.from(document.querySelectorAll('.updateScope'))
+            .map(input => input.value.trim())
+            .filter(scope => scope !== '')
+            .join(' '),
+        token_endpoint_auth_method: document.querySelector('input[name="updateTokenEndpointAuthMethod"]:checked').value,
+        owner: document.getElementById('updateOwner').value,
+        contacts: Array.from(document.querySelectorAll('.updateContact'))
+            .map(input => input.value.trim())
+            .filter(contact => contact !== ''),
+        client_uri: document.getElementById('updateClientUri').value,
+        logo_uri: document.getElementById('updateLogoUri').value,
+        tos_uri: document.getElementById('updateTosUri').value
+    };
+
+    // Validate URIs
+    const invalidUris = updates.redirect_uris.filter(uri => !isValidUri(uri));
+    if (invalidUris.length > 0) {
+        showToast(`Invalid redirect URIs: ${invalidUris.join(', ')}`, 'error');
+        return;
+    }
+    if (updates.client_uri && !isValidUri(updates.client_uri)) {
+        showToast('Invalid Client URI', 'error');
+        return;
+    }
+    if (updates.logo_uri && !isValidUri(updates.logo_uri)) {
+        showToast('Invalid Logo URI', 'error');
+        return;
+    }
+    if (updates.tos_uri && !isValidUri(updates.tos_uri)) {
+        showToast('Invalid Terms of Service URI', 'error');
+        return;
+    }
+
+    try {
+        await updateClient(clientId, updates);
+        showToast('Client updated successfully!', 'success');
+    } catch (error) {
+        console.error('Error updating client:', error);
+        showToast('Failed to update client. Please try again.', 'error');
+    }
+});
+
+// Update client
+async function updateClient(clientId, updates) {
+    try {
+        const patchOperations = Object.entries(updates).map(([key, value]) => ({
+            op: "replace",
+            path: `/${key}`,
+            value: value
+        }));
+
+        const response = await fetch(`${UPDATE_CLIENT_ENDPOINT}${clientId}`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json-patch+json',
+            },
+            body: JSON.stringify(patchOperations),
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to update client');
+        }
+
+        const updatedClient = await response.json();
+        displayClientDetails(updatedClient);
+        
+        // Update the client in the allClients array
+        const index = allClients.findIndex(client => client.client_id === clientId);
+        if (index !== -1) {
+            allClients[index] = updatedClient;
+        }
+        
+        applyFiltersAndPagination();
+    } catch (error) {
+        console.error('Error updating client:', error);
+        showToast('Failed to update client. Please try again.', 'error');
+    }
 }
 
 // Initial load
