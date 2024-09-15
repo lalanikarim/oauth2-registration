@@ -12,7 +12,13 @@
         <h1>OAuth2 Client Manager</h1>
         <div id="clientList">
             <h2>Existing Clients</h2>
+            <form id="filterForm">
+                <input type="text" id="filterClientName" placeholder="Filter by Client Name">
+                <input type="text" id="filterClientId" placeholder="Filter by Client ID">
+                <button type="submit">Filter</button>
+            </form>
             <ul id="clientListItems"></ul>
+            <div id="paginationContainer"></div>
         </div>
         <div id="clientDetails">
             <h2>Client Details</h2>

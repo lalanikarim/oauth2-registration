@@ -41,10 +41,15 @@ app.post('/api/clients', async (req, res) => {
         const newClient = {
             client_name: req.body.client_name,
             redirect_uris: req.body.redirect_uris,
-            grant_types: req.body.grant_types || ["authorization_code", "client_credentials", "refresh_token"],
-            response_types: req.body.response_types || ["code"],
-            scope: req.body.scope || "openid offline_access offline",
-            token_endpoint_auth_method: req.body.token_endpoint_auth_method || "client_secret_basic"
+            grant_types: req.body.grant_types,
+            response_types: req.body.response_types,
+            scope: req.body.scope,
+            token_endpoint_auth_method: req.body.token_endpoint_auth_method,
+            owner: req.body.owner,
+            contacts: req.body.contacts,
+            client_uri: req.body.client_uri,
+            logo_uri: req.body.logo_uri,
+            tos_uri: req.body.tos_uri
         };
         const response = await axios.post(`${config.OAUTH2_BASE_URL}/clients`, newClient);
         res.json(response.data);

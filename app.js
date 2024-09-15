@@ -15,20 +15,82 @@ const scopesContainer = document.getElementById('scopesContainer');
 const addScopeButton = document.getElementById('addScope');
 const contactsContainer = document.getElementById('contactsContainer');
 const addContactButton = document.getElementById('addContact');
+const paginationContainer = document.getElementById('paginationContainer');
+const filterForm = document.getElementById('filterForm');
 
-// Fetch and display client list
-async function fetchClients() {
+let allClients = [];
+let currentPage = 1;
+const clientsPerPage = 10;
+
+// Fetch all clients
+async function fetchAllClients() {
     try {
         const response = await fetch(LIST_CLIENTS_ENDPOINT);
-        const clients = await response.json();
-        clientListItems.innerHTML = clients.map(client => `
-            <li onclick="fetchClientDetails('${client.client_id}')">${client.client_name}</li>
-        `).join('');
+        allClients = await response.json();
+        applyFiltersAndPagination();
     } catch (error) {
         console.error('Error fetching clients:', error);
         showToast('Error fetching clients. Please try again.', 'error');
     }
 }
+
+// Apply filters and pagination
+function applyFiltersAndPagination() {
+    const filters = getFilters();
+    const filteredClients = allClients.filter(client => 
+        (!filters.client_name || client.client_name.toLowerCase().includes(filters.client_name.toLowerCase())) &&
+        (!filters.client_id || client.client_id.includes(filters.client_id))
+    );
+
+    const totalPages = Math.ceil(filteredClients.length / clientsPerPage);
+    const startIndex = (currentPage - 1) * clientsPerPage;
+    const endIndex = startIndex + clientsPerPage;
+    const clientsToDisplay = filteredClients.slice(startIndex, endIndex);
+
+    displayClients(clientsToDisplay);
+    updatePagination(totalPages);
+}
+
+// Display clients
+function displayClients(clients) {
+    clientListItems.innerHTML = clients.map(client => `
+        <li onclick="fetchClientDetails('${client.client_id}')">${client.client_name} (${client.client_id})</li>
+    `).join('');
+}
+
+// Update pagination
+function updatePagination(totalPages) {
+    paginationContainer.innerHTML = '';
+    for (let i = 1; i <= totalPages; i++) {
+        const pageButton = document.createElement('button');
+        pageButton.textContent = i;
+        pageButton.onclick = () => {
+            currentPage = i;
+            applyFiltersAndPagination();
+        };
+        if (i === currentPage) {
+            pageButton.disabled = true;
+        }
+        paginationContainer.appendChild(pageButton);
+    }
+}
+
+// Get filters
+function getFilters() {
+    const clientName = document.getElementById('filterClientName').value;
+    const clientId = document.getElementById('filterClientId').value;
+    const filters = {};
+    if (clientName) filters.client_name = clientName;
+    if (clientId) filters.client_id = clientId;
+    return filters;
+}
+
+// Apply filters
+filterForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    currentPage = 1;
+    applyFiltersAndPagination();
+});
 
 // Fetch and display client details
 async function fetchClientDetails(clientId) {
@@ -54,7 +116,7 @@ function displayClientDetails(client) {
         <p><strong>Scope:</strong> ${client.scope}</p>
         <p><strong>Token Endpoint Auth Method:</strong> ${client.token_endpoint_auth_method}</p>
         <p><strong>Owner:</strong> ${client.owner || 'N/A'}</p>
-        <p><strong>Contacts:</strong> ${client.contacts.join(', ') || 'N/A'}</p>
+        <p><strong>Contacts:</strong> ${client.contacts && client.contacts.length ? client.contacts.join(', ') : 'N/A'}</p>
         <p><strong>Client URI:</strong> ${client.client_uri || 'N/A'}</p>
         <p><strong>Logo URI:</strong> ${client.logo_uri || 'N/A'}</p>
         <p><strong>Terms of Service URI:</strong> ${client.tos_uri || 'N/A'}</p>
@@ -103,6 +165,16 @@ addContactButton.addEventListener('click', () => {
     }
 });
 
+// Validate URI
+function isValidUri(uri) {
+    try {
+        new URL(uri);
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
+
 // Register new client
 registerForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -125,6 +197,25 @@ registerForm.addEventListener('submit', async (e) => {
     const clientUri = document.getElementById('clientUri').value;
     const logoUri = document.getElementById('logoUri').value;
     const tosUri = document.getElementById('tosUri').value;
+
+    // Validate URIs
+    const invalidUris = redirectUris.filter(uri => !isValidUri(uri));
+    if (invalidUris.length > 0) {
+        showToast(`Invalid redirect URIs: ${invalidUris.join(', ')}`, 'error');
+        return;
+    }
+    if (clientUri && !isValidUri(clientUri)) {
+        showToast('Invalid Client URI', 'error');
+        return;
+    }
+    if (logoUri && !isValidUri(logoUri)) {
+        showToast('Invalid Logo URI', 'error');
+        return;
+    }
+    if (tosUri && !isValidUri(tosUri)) {
+        showToast('Invalid Terms of Service URI', 'error');
+        return;
+    }
 
     try {
         const response = await fetch(REGISTER_CLIENT_ENDPOINT, {
@@ -149,7 +240,8 @@ registerForm.addEventListener('submit', async (e) => {
         const newClient = await response.json();
         showToast(`Client registered successfully! Client ID: ${newClient.client_id}`, 'success');
         displayClientDetails(newClient);
-        fetchClients(); // Refresh client list
+        allClients.push(newClient);
+        applyFiltersAndPagination();
         registerForm.reset();
         resetRedirectUris();
         resetScopes();
@@ -205,4 +297,4 @@ function showToast(message, type = 'info') {
 }
 
 // Initial load
-fetchClients();
+fetchAllClients();
