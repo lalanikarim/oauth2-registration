@@ -1,0 +1,157 @@
+body {
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+}
+
+.container {
+    width: 80%;
+    margin: auto;
+    overflow: hidden;
+    padding: 20px;
+}
+
+h1, h2 {
+    color: #333;
+}
+
+#clientList, #clientDetails, #registerClient {
+    background: #fff;
+    margin-bottom: 20px;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+li {
+    background: #f4f4f4;
+    margin-bottom: 5px;
+    padding: 10px;
+    cursor: pointer;
+}
+
+li:hover {
+    background: #e4e4e4;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+}
+
+label {
+    margin-top: 10px;
+}
+
+input, select {
+    padding: 8px;
+    margin-top: 5px;
+}
+
+button {
+    margin-top: 10px;
+    padding: 10px;
+    background: #333;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #555;
+}
+
+button:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+#toastContainer {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+}
+
+.toast {
+    background-color: #333;
+    color: #fff;
+    padding: 15px 20px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    opacity: 0.9;
+    transition: 0.3s ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    min-width: 250px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.2);
+}
+
+.toast-success {
+    background-color: #4CAF50;
+}
+
+.toast-error {
+    background-color: #F44336;
+}
+
+.toast-close {
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0;
+    margin-left: 10px;
+}
+
+.toast-close:hover {
+    color: #ddd;
+}
+
+#redirectUrisContainer, #scopesContainer, #contactsContainer {
+    display: flex;
+    flex-direction: column;
+}
+
+.redirectUri, .scope, .contact {
+    margin-bottom: 5px;
+}
+
+#grantTypesContainer, #responseTypesContainer, #tokenEndpointAuthMethodContainer {
+    display: flex;
+    flex-direction: column;
+    margin-top: 5px;
+}
+
+#grantTypesContainer label, #responseTypesContainer label, #tokenEndpointAuthMethodContainer label {
+    margin-top: 5px;
+}
+
+#addRedirectUri, #addScope, #addContact {
+    align-self: flex-start;
+    margin-top: 5px;
+    padding: 5px 10px;
+    font-size: 0.9em;
+}
+
+#tokenEndpointAuthMethodContainer {
+    flex-direction: row;
+    justify-content: flex-start;
+}
+
+#tokenEndpointAuthMethodContainer label {
+    margin-right: 15px;
+}
+
+#contactsContainer input {
+    margin-bottom: 5px;
+}
