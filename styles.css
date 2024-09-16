@@ -35,6 +35,9 @@ li {
     margin-bottom: 5px;
     padding: 10px;
     cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 li:hover {
@@ -193,4 +196,15 @@ button:disabled {
 
 #clientDetailsContent p {
     margin: 5px 0;
+}
+
+/* htmx specific styles */
+.htmx-indicator {
+    display: none;
+}
+.htmx-request .htmx-indicator {
+    display: inline;
+}
+.htmx-request.htmx-indicator {
+    display: inline;
 }

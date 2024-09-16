@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OAuth2 Client Manager</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    <script src="validation.js" defer></script>
 </head>
 <body>
     <div id="toastContainer"></div>
@@ -12,50 +14,56 @@
         <h1>OAuth2 Client Manager</h1>
         <div id="clientList">
             <h2>Existing Clients</h2>
-            <form id="filterForm">
-                <input type="text" id="filterClientName" placeholder="Filter by Client Name">
-                <input type="text" id="filterClientId" placeholder="Filter by Client ID">
+            <form id="filterForm" hx-get="/api/clients" hx-target="#clientListContainer" hx-trigger="submit">
+                <input type="text" name="clientName" placeholder="Filter by Client Name">
+                <input type="text" name="clientId" placeholder="Filter by Client ID">
                 <button type="submit">Filter</button>
             </form>
-            <ul id="clientListItems"></ul>
-            <div id="paginationContainer"></div>
+            <div id="clientListContainer" hx-get="/api/clients" hx-trigger="load delay:100ms">
+                <ul id="clientListItems"></ul>
+                <div id="paginationContainer"></div>
+            </div>
         </div>
         <div id="clientDetails">
             <h2>Client Details</h2>
             <div id="clientDetailsContent"></div>
         </div>
+        <div id="newClientDetails">
+            <h2>Newly Created Client</h2>
+            <div id="newClientDetailsContent"></div>
+        </div>
         <div id="registerClient">
             <h2>Register New Client</h2>
-            <form id="registerForm">
+            <form id="registerForm" hx-post="/api/clients" hx-target="#clientListContainer" hx-swap="innerHTML" hx-on::after-request="this.reset();">
                 <label for="clientName">Client Name:</label>
-                <input type="text" id="clientName" required>
+                <input type="text" id="clientName" name="clientName" required minlength="3">
 
                 <label>Redirect URIs (optional, max 10):</label>
                 <div id="redirectUrisContainer">
-                    <input type="text" class="redirectUri">
+                    <input type="text" name="redirectUris[]" class="redirectUri">
                 </div>
-                <button type="button" id="addRedirectUri">Add Redirect URI</button>
+                <button type="button" hx-get="/partial/redirect-uri-input" hx-target="#redirectUrisContainer" hx-swap="beforeend">Add Redirect URI</button>
 
                 <label>Grant Types:</label>
                 <div id="grantTypesContainer">
-                    <label><input type="checkbox" name="grantTypes" value="authorization_code" checked> Authorization Code</label>
-                    <label><input type="checkbox" name="grantTypes" value="client_credentials"> Client Credentials</label>
-                    <label><input type="checkbox" name="grantTypes" value="refresh_token"> Refresh Token</label>
+                    <label><input type="checkbox" name="grantTypes[]" value="authorization_code" checked> Authorization Code</label>
+                    <label><input type="checkbox" name="grantTypes[]" value="client_credentials"> Client Credentials</label>
+                    <label><input type="checkbox" name="grantTypes[]" value="refresh_token"> Refresh Token</label>
                 </div>
 
                 <label>Response Types:</label>
                 <div id="responseTypesContainer">
-                    <label><input type="checkbox" name="responseTypes" value="code" checked> Code</label>
-                    <label><input type="checkbox" name="responseTypes" value="token"> Token</label>
+                    <label><input type="checkbox" name="responseTypes[]" value="code" checked> Code</label>
+                    <label><input type="checkbox" name="responseTypes[]" value="token"> Token</label>
                 </div>
 
                 <label>Scopes (max 20):</label>
                 <div id="scopesContainer">
-                    <input type="text" class="scope" value="openid">
-                    <input type="text" class="scope" value="offline_access">
-                    <input type="text" class="scope" value="offline">
+                    <input type="text" name="scopes[]" class="scope" value="openid">
+                    <input type="text" name="scopes[]" class="scope" value="offline_access">
+                    <input type="text" name="scopes[]" class="scope" value="offline">
                 </div>
-                <button type="button" id="addScope">Add Scope</button>
+                <button type="button" hx-get="/partial/scope-input" hx-target="#scopesContainer" hx-swap="beforeend">Add Scope</button>
 
                 <label>Token Endpoint Auth Method:</label>
                 <div id="tokenEndpointAuthMethodContainer">
@@ -65,27 +73,27 @@
                 </div>
 
                 <label for="owner">Owner:</label>
-                <input type="text" id="owner">
+                <input type="text" id="owner" name="owner">
 
                 <label>Contacts (max 10):</label>
                 <div id="contactsContainer">
-                    <input type="text" class="contact" placeholder="name email@example.com">
+                    <input type="text" name="contacts[]" class="contact" placeholder="name email@example.com">
                 </div>
-                <button type="button" id="addContact">Add Contact</button>
+                <button type="button" hx-get="/partial/contact-input" hx-target="#contactsContainer" hx-swap="beforeend">Add Contact</button>
 
                 <label for="clientUri">Client URI:</label>
-                <input type="url" id="clientUri">
+                <input type="url" id="clientUri" name="clientUri">
 
                 <label for="logoUri">Logo URI:</label>
-                <input type="url" id="logoUri">
+                <input type="url" id="logoUri" name="logoUri">
 
                 <label for="tosUri">Terms of Service URI:</label>
-                <input type="url" id="tosUri">
+                <input type="url" id="tosUri" name="tosUri">
 
                 <button type="submit">Register Client</button>
             </form>
         </div>
     </div>
-    <script src="app.js"></script>
+    <div class="htmx-indicator">Loading...</div>
 </body>
 </html>
