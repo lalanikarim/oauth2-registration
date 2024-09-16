@@ -32,7 +32,7 @@ function generateClientDetails(client) {
     return `
         <h3>${client.client_name}</h3>
         <p><strong>Client ID:</strong> ${client.client_id}</p>
-        <p><strong>Client Secret:</strong> ${client.client_secret}</p>
+        <p><strong>Client Secret:</strong> ${client.client_secret || 'hidden'}</p>
         <p><strong>Redirect URIs:</strong> ${client.redirect_uris.join(', ')}</p>
         <p><strong>Grant Types:</strong> ${client.grant_types.join(', ')}</p>
         <p><strong>Response Types:</strong> ${client.response_types.join(', ')}</p>
