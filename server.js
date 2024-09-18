@@ -23,6 +23,7 @@ function generateClientListItem(client) {
             <span>${client.client_name}</span>
             <span>${client.client_id}</span>
             <button hx-get="/api/clients/${client.client_id}" hx-target="#clientDetailsContent">View Details</button>
+            <button hx-get="/api/clients/${client.client_id}/edit" hx-target="#editClientForm">Edit</button>
         </li>
     `;
 }
@@ -43,6 +44,68 @@ function generateClientDetails(client) {
         <p><strong>Client URI:</strong> ${client.client_uri || 'N/A'}</p>
         <p><strong>Logo URI:</strong> ${client.logo_uri || 'N/A'}</p>
         <p><strong>Terms of Service URI:</strong> ${client.tos_uri || 'N/A'}</p>
+    `;
+}
+
+// Helper function to generate HTML for the edit form
+function generateEditForm(client) {
+    return `
+        <form id="editClientForm" hx-put="/api/clients/${client.client_id}" hx-target="#clientDetailsContent" hx-swap="outerHTML">
+            <label for="clientName">Client Name:</label>
+            <input type="text" id="clientName" name="clientName" value="${client.client_name}" required minlength="3">
+
+            <label>Redirect URIs:</label>
+            <div id="redirectUrisContainer">
+                ${client.redirect_uris.map(uri => `<input type="text" name="redirectUris[]" class="redirectUri" value="${uri}">`).join('')}
+            </div>
+            <button type="button" hx-get="/partial/redirect-uri-input" hx-target="#redirectUrisContainer" hx-swap="beforeend">Add Redirect URI</button>
+
+            <label>Grant Types:</label>
+            <div id="grantTypesContainer">
+                <label><input type="checkbox" name="grantTypes[]" value="authorization_code" ${client.grant_types.includes('authorization_code') ? 'checked' : ''}> Authorization Code</label>
+                <label><input type="checkbox" name="grantTypes[]" value="client_credentials" ${client.grant_types.includes('client_credentials') ? 'checked' : ''}> Client Credentials</label>
+                <label><input type="checkbox" name="grantTypes[]" value="refresh_token" ${client.grant_types.includes('refresh_token') ? 'checked' : ''}> Refresh Token</label>
+            </div>
+
+            <label>Response Types:</label>
+            <div id="responseTypesContainer">
+                <label><input type="checkbox" name="responseTypes[]" value="code" ${client.response_types.includes('code') ? 'checked' : ''}> Code</label>
+                <label><input type="checkbox" name="responseTypes[]" value="token" ${client.response_types.includes('token') ? 'checked' : ''}> Token</label>
+            </div>
+
+            <label>Scopes:</label>
+            <div id="scopesContainer">
+                ${client.scope.split(' ').map(scope => `<input type="text" name="scopes[]" class="scope" value="${scope}">`).join('')}
+            </div>
+            <button type="button" hx-get="/partial/scope-input" hx-target="#scopesContainer" hx-swap="beforeend">Add Scope</button>
+
+            <label>Token Endpoint Auth Method:</label>
+            <div id="tokenEndpointAuthMethodContainer">
+                <label><input type="radio" name="tokenEndpointAuthMethod" value="client_secret_basic" ${client.token_endpoint_auth_method === 'client_secret_basic' ? 'checked' : ''}> Client Secret Basic</label>
+                <label><input type="radio" name="tokenEndpointAuthMethod" value="client_secret_post" ${client.token_endpoint_auth_method === 'client_secret_post' ? 'checked' : ''}> Client Secret Post</label>
+                <label><input type="radio" name="tokenEndpointAuthMethod" value="none" ${client.token_endpoint_auth_method === 'none' ? 'checked' : ''}> None</label>
+            </div>
+
+            <label for="owner">Owner:</label>
+            <input type="text" id="owner" name="owner" value="${client.owner}">
+
+            <label>Contacts:</label>
+            <div id="contactsContainer">
+                ${client.contacts.map(contact => `<input type="text" name="contacts[]" class="contact" value="${contact}">`).join('')}
+            </div>
+            <button type="button" hx-get="/partial/contact-input" hx-target="#contactsContainer" hx-swap="beforeend">Add Contact</button>
+
+            <label for="clientUri">Client URI:</label>
+            <input type="url" id="clientUri" name="clientUri" value="${client.client_uri || ''}">
+
+            <label for="logoUri">Logo URI:</label>
+            <input type="url" id="logoUri" name="logoUri" value="${client.logo_uri || ''}">
+
+            <label for="tosUri">Terms of Service URI:</label>
+            <input type="url" id="tosUri" name="tosUri" value="${client.tos_uri || ''}">
+
+            <button type="submit">Update Client</button>
+        </form>
     `;
 }
 
@@ -121,6 +184,22 @@ app.get('/api/clients/:id', async (req, res) => {
     }
 });
 
+app.get('/api/clients/:id/edit', async (req, res) => {
+    try {
+        const response = await axios.get(`${config.OAUTH2_BASE_URL}/clients/${req.params.id}`);
+        const client = response.data;
+
+        if (req.header('HX-Request')) {
+            res.send(generateEditForm(client));
+        } else {
+            res.json(client);
+        }
+    } catch (error) {
+        console.error('Error fetching client for editing:', error.message);
+        res.status(500).send('<p>Error fetching client for editing</p>');
+    }
+});
+
 app.post('/api/clients', async (req, res) => {
     try {
         const newClient = {
@@ -160,33 +239,35 @@ app.post('/api/clients', async (req, res) => {
     }
 });
 
-app.patch('/api/clients/:id', async (req, res) => {
+app.put('/api/clients/:id', async (req, res) => {
     try {
         const clientId = req.params.id;
-        const patchOperations = req.body;
+        const updatedClient = {
+            client_name: req.body.clientName,
+            redirect_uris: req.body.redirectUris,
+            grant_types: req.body.grantTypes,
+            response_types: req.body.responseTypes,
+            scope: req.body.scopes.join(' '),
+            token_endpoint_auth_method: req.body.tokenEndpointAuthMethod,
+            owner: req.body.owner,
+            contacts: req.body.contacts,
+            client_uri: req.body.clientUri,
+            logo_uri: req.body.logoUri,
+            tos_uri: req.body.tosUri
+        };
 
-        if (!Array.isArray(patchOperations)) {
-            return res.status(400).send('<p>Invalid patch format. Expected an array of patch operations.</p>');
-        }
-
-        for (const op of patchOperations) {
-            if (!op.op || !op.path || (op.op !== 'remove' && !op.hasOwnProperty('value'))) {
-                return res.status(400).send('<p>Invalid patch operation. Each operation must have "op" and "path" fields, and "value" for non-remove operations.</p>');
-            }
-            if (!['add', 'remove', 'replace', 'move', 'copy', 'test'].includes(op.op)) {
-                return res.status(400).send('<p>Invalid operation. Allowed operations are: add, remove, replace, move, copy, test.</p>');
-            }
-        }
-
-        const response = await axios.patch(`${config.OAUTH2_BASE_URL}/clients/${clientId}`, patchOperations, {
-            headers: { 'Content-Type': 'application/json-patch+json' }
-        });
-        const updatedClient = response.data;
+        const response = await axios.put(`${config.OAUTH2_BASE_URL}/clients/${clientId}`, updatedClient);
+        const updatedClientData = response.data;
 
         if (req.header('HX-Request')) {
-            res.send(generateClientListItem(updatedClient));
+            res.send(`
+                <div id="clientDetailsContent">
+                    ${generateClientDetails(updatedClientData)}
+                </div>
+                <div id="editClientForm" hx-swap-oob="true"></div>
+            `);
         } else {
-            res.json(updatedClient);
+            res.json(updatedClientData);
         }
     } catch (error) {
         console.error('Error updating client:', error.message);
