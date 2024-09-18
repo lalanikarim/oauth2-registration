@@ -17,7 +17,7 @@ h1, h2 {
     color: #333;
 }
 
-#clientList, #clientDetails, #registerClient {
+#clientList, #clientDetails, #registerClient, #editClient {
     background: #fff;
     margin-bottom: 20px;
     padding: 20px;
