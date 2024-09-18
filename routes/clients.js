@@ -110,12 +110,13 @@ router.post('/', async (req, res) => {
 
         if (req.header('HX-Request')) {
             res.send(`
-                ${generateClientListItem(createdClient)}
+                <div id="clientListContainer" hx-get="/api/clients" hx-trigger="load" hx-swap-oob="true"></div>
+                <div id="clientDetailsContent" hx-get="/api/clients/${createdClient.client_id}" hx-trigger="load" hx-swap-oob="true"></div>
                 <div id="newClientDetails" hx-swap-oob="true">
                     ${generateClientDetails(createdClient)}
                 </div>
                 <div id="registrationForm" hx-swap-oob="true">
-                    <form id="registerForm" hx-post="/api/clients" hx-target="#clientListItems" hx-swap="beforeend">
+                    <form id="registerForm" hx-post="/api/clients" hx-target="#clientListContainer" hx-swap="innerHTML">
                         <!-- Form fields here (empty) -->
                     </form>
                 </div>

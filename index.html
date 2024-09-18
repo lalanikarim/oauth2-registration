@@ -32,13 +32,9 @@
             <h2>Edit Client</h2>
             <div id="editClientForm"></div>
         </div>
-        <div id="newClientDetails">
-            <h2>Newly Created Client</h2>
-            <div id="newClientDetailsContent"></div>
-        </div>
         <div id="registerClient">
             <h2>Register New Client</h2>
-            <form id="registerForm" hx-post="/api/clients" hx-target="#clientListContainer" hx-swap="innerHTML" hx-on::after-request="this.reset();">
+            <form id="registerForm" hx-post="/api/clients" hx-target="body" hx-swap="beforeend">
                 <label for="clientName">Client Name:</label>
                 <input type="text" id="clientName" name="clientName" required minlength="3">
 
