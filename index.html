@@ -14,6 +14,7 @@
         <h1>OAuth2 Client Manager</h1>
         <div id="clientList">
             <h2>Existing Clients</h2>
+            <button id="createNewClientBtn" onclick="showRegisterForm()">Create New Client</button>
             <form id="filterForm" hx-get="/api/clients" hx-target="#clientListContainer" hx-trigger="submit">
                 <input type="text" name="clientName" placeholder="Filter by Client Name">
                 <input type="text" name="clientId" placeholder="Filter by Client ID">
@@ -24,15 +25,15 @@
                 <div id="paginationContainer"></div>
             </div>
         </div>
-        <div id="clientDetails">
+        <div id="clientDetails" style="display: none;">
             <h2>Client Details</h2>
             <div id="clientDetailsContent"></div>
         </div>
-        <div id="editClient">
+        <div id="editClient" style="display: none;">
             <h2>Edit Client</h2>
             <div id="editClientForm"></div>
         </div>
-        <div id="registerClient">
+        <div id="registerClient" style="display: none;">
             <h2>Register New Client</h2>
             <form id="registerForm" hx-post="/api/clients" hx-target="body" hx-swap="beforeend">
                 <label for="clientName">Client Name:</label>
@@ -95,5 +96,28 @@
         </div>
     </div>
     <div class="htmx-indicator">Loading...</div>
+    <script>
+        function showRegisterForm() {
+            document.getElementById('registerClient').style.display = 'block';
+            document.getElementById('clientDetails').style.display = 'none';
+            document.getElementById('editClient').style.display = 'none';
+        }
+
+        function hideRegisterForm() {
+            document.getElementById('registerClient').style.display = 'none';
+        }
+
+        function showClientDetails() {
+            document.getElementById('clientDetails').style.display = 'block';
+            document.getElementById('editClient').style.display = 'none';
+            hideRegisterForm();
+        }
+
+        function showEditForm() {
+            document.getElementById('editClient').style.display = 'block';
+            document.getElementById('clientDetails').style.display = 'none';
+            hideRegisterForm();
+        }
+    </script>
 </body>
 </html>

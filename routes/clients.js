@@ -39,7 +39,23 @@ router.get('/', async (req, res) => {
         const searchParams = `${clientName ? `&clientName=${clientName}` : ''}${clientId ? `&clientId=${clientId}` : ''}`;
 
         if (req.header('HX-Request')) {
-            const clientListHtml = paginatedClients.map(generateClientListItem).join('');
+            const clientListHtml = paginatedClients.map(client => `
+                <li>
+                    <span>${client.client_name}</span>
+                    <span>${client.client_id}</span>
+                    <button hx-get="/api/clients/${client.client_id}" 
+                            hx-target="#clientDetailsContent"
+                            hx-swap="innerHTML"
+                            onclick="showClientDetails()">
+                        View Details
+                    </button>
+                    <button hx-get="/api/clients/${client.client_id}/edit" 
+                            hx-target="#editClientForm"
+                            onclick="showEditForm()">
+                        Edit
+                    </button>
+                </li>
+            `).join('');
             const paginationHtml = generatePagination(pageInt, totalPages, searchParams);
             res.send(`
                 <ul id="clientListItems">
@@ -111,15 +127,14 @@ router.post('/', async (req, res) => {
         if (req.header('HX-Request')) {
             res.send(`
                 <div id="clientListContainer" hx-get="/api/clients" hx-trigger="load" hx-swap-oob="true"></div>
-                <div id="clientDetailsContent" hx-get="/api/clients/${createdClient.client_id}" hx-trigger="load" hx-swap-oob="true"></div>
-                <div id="newClientDetails" hx-swap-oob="true">
-                    ${generateClientDetails(createdClient)}
+                <div id="clientDetails" hx-swap-oob="true">
+                    <h2>Client Details</h2>
+                    <div id="clientDetailsContent" hx-get="/api/clients/${createdClient.client_id}" hx-trigger="load"></div>
                 </div>
-                <div id="registrationForm" hx-swap-oob="true">
-                    <form id="registerForm" hx-post="/api/clients" hx-target="#clientListContainer" hx-swap="innerHTML">
-                        <!-- Form fields here (empty) -->
-                    </form>
-                </div>
+                <script>
+                    showClientDetails();
+                    document.getElementById('registerForm').reset();
+                </script>
             `);
         } else {
             res.json(createdClient);
@@ -152,10 +167,14 @@ router.put('/:id', async (req, res) => {
 
         if (req.header('HX-Request')) {
             res.send(`
+                <div id="clientListContainer" hx-get="/api/clients" hx-trigger="load" hx-swap-oob="true"></div>
                 <div id="clientDetailsContent">
                     ${generateClientDetails(updatedClientData)}
                 </div>
                 <div id="editClientForm" hx-swap-oob="true"></div>
+                <script>
+                    showClientDetails();
+                </script>
             `);
         } else {
             res.json(updatedClientData);
