@@ -3,8 +3,8 @@ function generateClientListItem(client) {
         <li>
             <span>${client.client_name}</span>
             <span>${client.client_id}</span>
-            <button hx-get="/api/clients/${client.client_id}" hx-target="#clientDetailsContent">View Details</button>
-            <button hx-get="/api/clients/${client.client_id}/edit" hx-target="#editClientForm">Edit</button>
+            <button hx-get="/api/clients/${client.client_id}" hx-target="#mainContent">View Details</button>
+            <button hx-get="/api/clients/${client.client_id}/edit" hx-target="#mainContent">Edit</button>
         </li>
     `;
 }
@@ -29,7 +29,7 @@ function generateClientDetails(client) {
 
 function generateEditForm(client) {
     return `
-        <form id="editClientForm" hx-put="/api/clients/${client.client_id}" hx-target="#clientDetailsContent" hx-swap="outerHTML">
+        <form id="editClientForm" hx-put="/api/clients/${client.client_id}" hx-target="#mainContent">
             <label for="clientName">Client Name:</label>
             <input type="text" id="clientName" name="clientName" value="${client.client_name}" required minlength="3">
 
@@ -100,44 +100,6 @@ function generateEditForm(client) {
 
             <button type="submit">Update Client</button>
         </form>
-        <script>
-            function removeField(button) {
-                button.closest('.input-group').remove();
-            }
-
-            function addRedirectUri() {
-                const container = document.getElementById('redirectUrisContainer');
-                const inputGroup = document.createElement('div');
-                inputGroup.className = 'input-group';
-                inputGroup.innerHTML = \`
-                    <input type="text" name="redirectUris[]" class="redirectUri">
-                    <button type="button" onclick="removeField(this)">Remove</button>
-                \`;
-                container.appendChild(inputGroup);
-            }
-
-            function addScope() {
-                const container = document.getElementById('scopesContainer');
-                const inputGroup = document.createElement('div');
-                inputGroup.className = 'input-group';
-                inputGroup.innerHTML = \`
-                    <input type="text" name="scopes[]" class="scope">
-                    <button type="button" onclick="removeField(this)">Remove</button>
-                \`;
-                container.appendChild(inputGroup);
-            }
-
-            function addContact() {
-                const container = document.getElementById('contactsContainer');
-                const inputGroup = document.createElement('div');
-                inputGroup.className = 'input-group';
-                inputGroup.innerHTML = \`
-                    <input type="text" name="contacts[]" class="contact">
-                    <button type="button" onclick="removeField(this)">Remove</button>
-                \`;
-                container.appendChild(inputGroup);
-            }
-        </script>
     `;
 }
 
@@ -145,7 +107,7 @@ function generatePagination(currentPage, totalPages, searchParams) {
     let paginationHtml = '';
     for (let i = 1; i <= totalPages; i++) {
         const pageUrl = `/api/clients?page=${i}${searchParams}`;
-        paginationHtml += `<button hx-get="${pageUrl}" hx-target="#clientListContainer" class="page-btn${i === currentPage ? ' active' : ''}">${i}</button>`;
+        paginationHtml += `<button hx-get="${pageUrl}" hx-target="#mainContent" class="page-btn${i === currentPage ? ' active' : ''}">${i}</button>`;
     }
     return paginationHtml;
 }

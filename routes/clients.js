@@ -10,6 +10,84 @@ const {
 
 const router = express.Router();
 
+router.get('/register-form', (req, res) => {
+    const registerFormHtml = `
+        <h2>Register New Client</h2>
+        <form id="registerForm" hx-post="/api/clients" hx-target="#mainContent">
+            <label for="clientName">Client Name:</label>
+            <input type="text" id="clientName" name="clientName" required minlength="3">
+
+            <label>Redirect URIs (optional, max 10):</label>
+            <div id="redirectUrisContainer">
+                <div class="input-group">
+                    <input type="text" name="redirectUris[]" class="redirectUri">
+                </div>
+            </div>
+            <button type="button" onclick="addRedirectUri()">Add Redirect URI</button>
+
+            <label>Grant Types:</label>
+            <div id="grantTypesContainer">
+                <label><input type="checkbox" name="grantTypes[]" value="authorization_code" checked> Authorization Code</label>
+                <label><input type="checkbox" name="grantTypes[]" value="client_credentials"> Client Credentials</label>
+                <label><input type="checkbox" name="grantTypes[]" value="refresh_token"> Refresh Token</label>
+            </div>
+
+            <label>Response Types:</label>
+            <div id="responseTypesContainer">
+                <label><input type="checkbox" name="responseTypes[]" value="code" checked> Code</label>
+                <label><input type="checkbox" name="responseTypes[]" value="token"> Token</label>
+            </div>
+
+            <label>Scopes (max 20):</label>
+            <div id="scopesContainer">
+                <div class="input-group">
+                    <input type="text" name="scopes[]" class="scope" value="openid">
+                </div>
+                <div class="input-group">
+                    <input type="text" name="scopes[]" class="scope" value="offline_access">
+                    <button type="button" onclick="removeField(this)">Remove</button>
+                </div>
+                <div class="input-group">
+                    <input type="text" name="scopes[]" class="scope" value="offline">
+                    <button type="button" onclick="removeField(this)">Remove</button>
+                </div>
+            </div>
+            <button type="button" onclick="addScope()">Add Scope</button>
+
+            <label>Token Endpoint Auth Method:</label>
+            <div id="tokenEndpointAuthMethodContainer">
+                <label><input type="radio" name="tokenEndpointAuthMethod" value="client_secret_basic" checked> Client Secret Basic</label>
+                <label><input type="radio" name="tokenEndpointAuthMethod" value="client_secret_post"> Client Secret Post</label>
+                <label><input type="radio" name="tokenEndpointAuthMethod" value="none"> None</label>
+            </div>
+
+            <label for="owner">Owner:</label>
+            <input type="text" id="owner" name="owner">
+
+            <label>Contacts (max 10):</label>
+            <div id="contactsContainer">
+                <div class="input-group">
+                    <input type="text" name="contacts[]" class="contact" placeholder="name email@example.com">
+                </div>
+            </div>
+            <button type="button" onclick="addContact()">Add Contact</button>
+
+            <label for="clientUri">Client URI:</label>
+            <input type="url" id="clientUri" name="clientUri">
+
+            <label for="logoUri">Logo URI:</label>
+            <input type="url" id="logoUri" name="logoUri">
+
+            <label for="tosUri">Terms of Service URI:</label>
+            <input type="url" id="tosUri" name="tosUri">
+
+            <button type="submit">Register Client</button>
+        </form>
+        <button hx-get="/api/clients" hx-target="#mainContent">Back to Client List</button>
+    `;
+    res.send(registerFormHtml);
+});
+
 router.get('/', async (req, res) => {
     try {
         const { clientName, clientId, page = 1, limit = 10 } = req.query;
@@ -44,20 +122,26 @@ router.get('/', async (req, res) => {
                     <span>${client.client_name}</span>
                     <span>${client.client_id}</span>
                     <button hx-get="/api/clients/${client.client_id}" 
-                            hx-target="#clientDetailsContent"
-                            hx-swap="innerHTML"
-                            onclick="showClientDetails()">
+                            hx-target="#mainContent"
+                            hx-swap="innerHTML">
                         View Details
                     </button>
                     <button hx-get="/api/clients/${client.client_id}/edit" 
-                            hx-target="#editClientForm"
-                            onclick="showEditForm()">
+                            hx-target="#mainContent"
+                            hx-swap="innerHTML">
                         Edit
                     </button>
                 </li>
             `).join('');
             const paginationHtml = generatePagination(pageInt, totalPages, searchParams);
             res.send(`
+                <h2>Existing Clients</h2>
+                <button hx-get="/api/clients/register-form" hx-target="#mainContent">Create New Client</button>
+                <form id="filterForm" hx-get="/api/clients" hx-target="#mainContent" hx-trigger="submit">
+                    <input type="text" name="clientName" placeholder="Filter by Client Name" value="${clientName || ''}">
+                    <input type="text" name="clientId" placeholder="Filter by Client ID" value="${clientId || ''}">
+                    <button type="submit">Filter</button>
+                </form>
                 <ul id="clientListItems">
                     ${clientListHtml}
                 </ul>
@@ -83,15 +167,17 @@ router.get('/:id', async (req, res) => {
             const clientDetailsHtml = generateClientDetails(client);
             const changeSecretButtonHtml = `
                 <button hx-get="/api/clients/${client.client_id}/change-secret-form"
-                        hx-target="#changeClientSecretForm"
+                        hx-target="#mainContent"
                         hx-swap="innerHTML">
                     Change Secret
                 </button>
             `;
             res.send(`
+                <h2>Client Details</h2>
                 ${clientDetailsHtml}
                 ${changeSecretButtonHtml}
                 <div id="changeClientSecretForm"></div>
+                <button hx-get="/api/clients" hx-target="#mainContent">Back to Client List</button>
             `);
         } else {
             res.json(client);
@@ -106,12 +192,13 @@ router.get('/:id/change-secret-form', (req, res) => {
     const clientId = req.params.id;
     const changeSecretFormHtml = `
         <h3>Change Client Secret</h3>
-        <form hx-put="/api/clients/${clientId}/secret" hx-target="#clientDetailsContent">
+        <form hx-put="/api/clients/${clientId}/secret" hx-target="#mainContent">
             <label for="newClientSecret">New Client Secret:</label>
             <input type="password" id="newClientSecret" name="newClientSecret" required minlength="6">
             <button type="submit">Update Secret</button>
         </form>
         <p>Note: Client secret must be at least 6 characters long.</p>
+        <button hx-get="/api/clients/${clientId}" hx-target="#mainContent">Back to Client Details</button>
     `;
     res.send(changeSecretFormHtml);
 });
@@ -122,7 +209,11 @@ router.get('/:id/edit', async (req, res) => {
         const client = response.data;
 
         if (req.header('HX-Request')) {
-            res.send(generateEditForm(client));
+            res.send(`
+                <h2>Edit Client</h2>
+                ${generateEditForm(client)}
+                <button hx-get="/api/clients" hx-target="#mainContent">Back to Client List</button>
+            `);
         } else {
             res.json(client);
         }
@@ -152,15 +243,9 @@ router.post('/', async (req, res) => {
 
         if (req.header('HX-Request')) {
             res.send(`
-                <div id="clientListContainer" hx-get="/api/clients" hx-trigger="load"></div>
-                <div id="clientDetails" hx-swap-oob="true">
-                    <h2>Client Details</h2>
-                    <div id="clientDetailsContent" hx-get="/api/clients/${createdClient.client_id}" hx-trigger="load"></div>
-                </div>
-                <script>
-                    showClientDetails();
-                    document.getElementById('registerForm').reset();
-                </script>
+                <h2>Client Created Successfully</h2>
+                ${generateClientDetails(createdClient)}
+                <button hx-get="/api/clients" hx-target="#mainContent">Back to Client List</button>
             `);
         } else {
             res.json(createdClient);
@@ -193,14 +278,9 @@ router.put('/:id', async (req, res) => {
 
         if (req.header('HX-Request')) {
             res.send(`
-                <div id="clientListContainer" hx-get="/api/clients" hx-trigger="load" hx-swap-oob="true"></div>
-                <div id="clientDetailsContent">
-                    ${generateClientDetails(updatedClientData)}
-                </div>
-                <div id="editClientForm" hx-swap-oob="true"></div>
-                <script>
-                    showClientDetails();
-                </script>
+                <h2>Client Updated Successfully</h2>
+                ${generateClientDetails(updatedClientData)}
+                <button hx-get="/api/clients" hx-target="#mainContent">Back to Client List</button>
             `);
         } else {
             res.json(updatedClientData);
@@ -231,21 +311,10 @@ router.put('/:id/secret', async (req, res) => {
         const updatedClientData = response.data;
 
         if (req.header('HX-Request')) {
-            const clientDetailsHtml = generateClientDetails(updatedClientData);
-            const changeSecretButtonHtml = `
-                <button hx-get="/api/clients/${clientId}/change-secret-form"
-                        hx-target="#changeClientSecretForm"
-                        hx-swap="innerHTML">
-                    Change Secret
-                </button>
-            `;
             res.send(`
-                ${clientDetailsHtml}
-                ${changeSecretButtonHtml}
-                <div id="changeClientSecretForm"></div>
-                <script>
-                    alert('Client secret updated successfully');
-                </script>
+                <h2>Client Secret Updated Successfully</h2>
+                ${generateClientDetails(updatedClientData)}
+                <button hx-get="/api/clients" hx-target="#mainContent">Back to Client List</button>
             `);
         } else {
             res.json({ message: 'Client secret updated successfully' });
