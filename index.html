@@ -44,7 +44,7 @@
                 <div id="redirectUrisContainer">
                     <input type="text" name="redirectUris[]" class="redirectUri">
                 </div>
-                <button type="button" hx-get="/partial/redirect-uri-input" hx-target="#redirectUrisContainer" hx-swap="beforeend">Add Redirect URI</button>
+                <button type="button" onclick="addRedirectUri()">Add Redirect URI</button>
 
                 <label>Grant Types:</label>
                 <div id="grantTypesContainer">
@@ -61,11 +61,19 @@
 
                 <label>Scopes (max 20):</label>
                 <div id="scopesContainer">
-                    <input type="text" name="scopes[]" class="scope" value="openid">
-                    <input type="text" name="scopes[]" class="scope" value="offline_access">
-                    <input type="text" name="scopes[]" class="scope" value="offline">
+                    <div class="input-group">
+                        <input type="text" name="scopes[]" class="scope" value="openid">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="scopes[]" class="scope" value="offline_access">
+                        <button type="button" onclick="removeField(this)">Remove</button>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="scopes[]" class="scope" value="offline">
+                        <button type="button" onclick="removeField(this)">Remove</button>
+                    </div>
                 </div>
-                <button type="button" hx-get="/partial/scope-input" hx-target="#scopesContainer" hx-swap="beforeend">Add Scope</button>
+                <button type="button" onclick="addScope()">Add Scope</button>
 
                 <label>Token Endpoint Auth Method:</label>
                 <div id="tokenEndpointAuthMethodContainer">
@@ -79,9 +87,11 @@
 
                 <label>Contacts (max 10):</label>
                 <div id="contactsContainer">
-                    <input type="text" name="contacts[]" class="contact" placeholder="name email@example.com">
+                    <div class="input-group">
+                        <input type="text" name="contacts[]" class="contact" placeholder="name email@example.com">
+                    </div>
                 </div>
-                <button type="button" hx-get="/partial/contact-input" hx-target="#contactsContainer" hx-swap="beforeend">Add Contact</button>
+                <button type="button" onclick="addContact()">Add Contact</button>
 
                 <label for="clientUri">Client URI:</label>
                 <input type="url" id="clientUri" name="clientUri">
@@ -118,6 +128,43 @@
             document.getElementById('editClient').style.display = 'block';
             document.getElementById('clientDetails').style.display = 'none';
             hideRegisterForm();
+        }
+
+        function removeField(button) {
+            button.closest('.input-group').remove();
+        }
+
+        function addRedirectUri() {
+            const container = document.getElementById('redirectUrisContainer');
+            const inputGroup = document.createElement('div');
+            inputGroup.className = 'input-group';
+            inputGroup.innerHTML = `
+                <input type="text" name="redirectUris[]" class="redirectUri">
+                <button type="button" onclick="removeField(this)">Remove</button>
+            `;
+            container.appendChild(inputGroup);
+        }
+
+        function addScope() {
+            const container = document.getElementById('scopesContainer');
+            const inputGroup = document.createElement('div');
+            inputGroup.className = 'input-group';
+            inputGroup.innerHTML = `
+                <input type="text" name="scopes[]" class="scope">
+                <button type="button" onclick="removeField(this)">Remove</button>
+            `;
+            container.appendChild(inputGroup);
+        }
+
+        function addContact() {
+            const container = document.getElementById('contactsContainer');
+            const inputGroup = document.createElement('div');
+            inputGroup.className = 'input-group';
+            inputGroup.innerHTML = `
+                <input type="text" name="contacts[]" class="contact" placeholder="name email@example.com">
+                <button type="button" onclick="removeField(this)">Remove</button>
+            `;
+            container.appendChild(inputGroup);
         }
     </script>
 </body>

@@ -14,13 +14,13 @@ function generateClientDetails(client) {
         <h3>${client.client_name}</h3>
         <p><strong>Client ID:</strong> ${client.client_id}</p>
         <p><strong>Client Secret:</strong> ${client.client_secret || 'hidden'}</p>
-        <p><strong>Redirect URIs:</strong> ${client.redirect_uris.join(', ')}</p>
-        <p><strong>Grant Types:</strong> ${client.grant_types.join(', ')}</p>
-        <p><strong>Response Types:</strong> ${client.response_types.join(', ')}</p>
-        <p><strong>Scope:</strong> ${client.scope}</p>
-        <p><strong>Token Endpoint Auth Method:</strong> ${client.token_endpoint_auth_method}</p>
-        <p><strong>Owner:</strong> ${client.owner}</p>
-        <p><strong>Contacts:</strong> ${client.contacts.join(', ')}</p>
+        <p><strong>Redirect URIs:</strong> ${Array.isArray(client.redirect_uris) ? client.redirect_uris.join(', ') : 'N/A'}</p>
+        <p><strong>Grant Types:</strong> ${Array.isArray(client.grant_types) ? client.grant_types.join(', ') : 'N/A'}</p>
+        <p><strong>Response Types:</strong> ${Array.isArray(client.response_types) ? client.response_types.join(', ') : 'N/A'}</p>
+        <p><strong>Scope:</strong> ${client.scope || 'N/A'}</p>
+        <p><strong>Token Endpoint Auth Method:</strong> ${client.token_endpoint_auth_method || 'N/A'}</p>
+        <p><strong>Owner:</strong> ${client.owner || 'N/A'}</p>
+        <p><strong>Contacts:</strong> ${Array.isArray(client.contacts) ? client.contacts.join(', ') : 'N/A'}</p>
         <p><strong>Client URI:</strong> ${client.client_uri || 'N/A'}</p>
         <p><strong>Logo URI:</strong> ${client.logo_uri || 'N/A'}</p>
         <p><strong>Terms of Service URI:</strong> ${client.tos_uri || 'N/A'}</p>
@@ -35,28 +35,38 @@ function generateEditForm(client) {
 
             <label>Redirect URIs:</label>
             <div id="redirectUrisContainer">
-                ${client.redirect_uris.map(uri => `<input type="text" name="redirectUris[]" class="redirectUri" value="${uri}">`).join('')}
+                ${Array.isArray(client.redirect_uris) ? client.redirect_uris.map((uri, index) => `
+                    <div class="input-group">
+                        <input type="text" name="redirectUris[]" class="redirectUri" value="${uri}">
+                        ${index > 0 ? '<button type="button" onclick="removeField(this)">Remove</button>' : ''}
+                    </div>
+                `).join('') : ''}
             </div>
-            <button type="button" hx-get="/partial/redirect-uri-input" hx-target="#redirectUrisContainer" hx-swap="beforeend">Add Redirect URI</button>
+            <button type="button" onclick="addRedirectUri()">Add Redirect URI</button>
 
             <label>Grant Types:</label>
             <div id="grantTypesContainer">
-                <label><input type="checkbox" name="grantTypes[]" value="authorization_code" ${client.grant_types.includes('authorization_code') ? 'checked' : ''}> Authorization Code</label>
-                <label><input type="checkbox" name="grantTypes[]" value="client_credentials" ${client.grant_types.includes('client_credentials') ? 'checked' : ''}> Client Credentials</label>
-                <label><input type="checkbox" name="grantTypes[]" value="refresh_token" ${client.grant_types.includes('refresh_token') ? 'checked' : ''}> Refresh Token</label>
+                <label><input type="checkbox" name="grantTypes[]" value="authorization_code" ${Array.isArray(client.grant_types) && client.grant_types.includes('authorization_code') ? 'checked' : ''}> Authorization Code</label>
+                <label><input type="checkbox" name="grantTypes[]" value="client_credentials" ${Array.isArray(client.grant_types) && client.grant_types.includes('client_credentials') ? 'checked' : ''}> Client Credentials</label>
+                <label><input type="checkbox" name="grantTypes[]" value="refresh_token" ${Array.isArray(client.grant_types) && client.grant_types.includes('refresh_token') ? 'checked' : ''}> Refresh Token</label>
             </div>
 
             <label>Response Types:</label>
             <div id="responseTypesContainer">
-                <label><input type="checkbox" name="responseTypes[]" value="code" ${client.response_types.includes('code') ? 'checked' : ''}> Code</label>
-                <label><input type="checkbox" name="responseTypes[]" value="token" ${client.response_types.includes('token') ? 'checked' : ''}> Token</label>
+                <label><input type="checkbox" name="responseTypes[]" value="code" ${Array.isArray(client.response_types) && client.response_types.includes('code') ? 'checked' : ''}> Code</label>
+                <label><input type="checkbox" name="responseTypes[]" value="token" ${Array.isArray(client.response_types) && client.response_types.includes('token') ? 'checked' : ''}> Token</label>
             </div>
 
             <label>Scopes:</label>
             <div id="scopesContainer">
-                ${client.scope.split(' ').map(scope => `<input type="text" name="scopes[]" class="scope" value="${scope}">`).join('')}
+                ${client.scope ? client.scope.split(' ').map((scope, index) => `
+                    <div class="input-group">
+                        <input type="text" name="scopes[]" class="scope" value="${scope}">
+                        ${index > 0 ? '<button type="button" onclick="removeField(this)">Remove</button>' : ''}
+                    </div>
+                `).join('') : ''}
             </div>
-            <button type="button" hx-get="/partial/scope-input" hx-target="#scopesContainer" hx-swap="beforeend">Add Scope</button>
+            <button type="button" onclick="addScope()">Add Scope</button>
 
             <label>Token Endpoint Auth Method:</label>
             <div id="tokenEndpointAuthMethodContainer">
@@ -66,13 +76,18 @@ function generateEditForm(client) {
             </div>
 
             <label for="owner">Owner:</label>
-            <input type="text" id="owner" name="owner" value="${client.owner}">
+            <input type="text" id="owner" name="owner" value="${client.owner || ''}">
 
             <label>Contacts:</label>
             <div id="contactsContainer">
-                ${client.contacts.map(contact => `<input type="text" name="contacts[]" class="contact" value="${contact}">`).join('')}
+                ${Array.isArray(client.contacts) ? client.contacts.map((contact, index) => `
+                    <div class="input-group">
+                        <input type="text" name="contacts[]" class="contact" value="${contact}">
+                        ${index > 0 ? '<button type="button" onclick="removeField(this)">Remove</button>' : ''}
+                    </div>
+                `).join('') : ''}
             </div>
-            <button type="button" hx-get="/partial/contact-input" hx-target="#contactsContainer" hx-swap="beforeend">Add Contact</button>
+            <button type="button" onclick="addContact()">Add Contact</button>
 
             <label for="clientUri">Client URI:</label>
             <input type="url" id="clientUri" name="clientUri" value="${client.client_uri || ''}">
@@ -85,6 +100,44 @@ function generateEditForm(client) {
 
             <button type="submit">Update Client</button>
         </form>
+        <script>
+            function removeField(button) {
+                button.closest('.input-group').remove();
+            }
+
+            function addRedirectUri() {
+                const container = document.getElementById('redirectUrisContainer');
+                const inputGroup = document.createElement('div');
+                inputGroup.className = 'input-group';
+                inputGroup.innerHTML = \`
+                    <input type="text" name="redirectUris[]" class="redirectUri">
+                    <button type="button" onclick="removeField(this)">Remove</button>
+                \`;
+                container.appendChild(inputGroup);
+            }
+
+            function addScope() {
+                const container = document.getElementById('scopesContainer');
+                const inputGroup = document.createElement('div');
+                inputGroup.className = 'input-group';
+                inputGroup.innerHTML = \`
+                    <input type="text" name="scopes[]" class="scope">
+                    <button type="button" onclick="removeField(this)">Remove</button>
+                \`;
+                container.appendChild(inputGroup);
+            }
+
+            function addContact() {
+                const container = document.getElementById('contactsContainer');
+                const inputGroup = document.createElement('div');
+                inputGroup.className = 'input-group';
+                inputGroup.innerHTML = \`
+                    <input type="text" name="contacts[]" class="contact">
+                    <button type="button" onclick="removeField(this)">Remove</button>
+                \`;
+                container.appendChild(inputGroup);
+            }
+        </script>
     `;
 }
 
